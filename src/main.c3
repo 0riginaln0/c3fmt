@@ -53,6 +53,42 @@ struct Context
 	bool has_mismatch;
 }
 
+faultdef CONFIG_NOT_FOUND;
+
+<*
+ Walk upward from `start` (a file or directory path) looking for the nearest
+ .c3fmt, parsing the first one found. Returns CONFIG_NOT_FOUND if the walk
+ reaches the filesystem root without a match.
+*>
+fn Config? find_config(String start) @local => @pool()
+{
+	Path dir = start.to_absolute_path(tmem)!.dirname().to_tpath()!;
+
+	while (true)
+	{
+		Path candidate = dir.tappend(".c3fmt")!;
+		if (file::exists(candidate))
+		{
+			return c3fmt::parse_from_file((String)candidate)!;
+		}
+
+		Path? parent = dir.parent();
+		if (catch parent) break;
+		dir = parent;
+	}
+
+	return CONFIG_NOT_FOUND~;
+}
+
+fn Config resolve_config_for_file(String path, Config default_config) @local
+{
+	if (cli_options.config != "" || cli_options.force_default_config)
+	{
+		return default_config;
+	}
+	return find_config(path) ?? default_config;
+}
+
 fn void format_worker(any[] args)
 {
 	String path = *(String*)args[0].ptr;
@@ -148,20 +184,17 @@ fn int main(String[] args)
 
 		config = parsed;
 	}
-	else if (file::exists("./.c3fmt"))
+	else
 	{
-		Config? parsed = c3fmt::parse_from_file("./.c3fmt");
-
-		if (try parsed)
+		// Walk up from the current directory for a .c3fmt config.
+		Config? found = find_config(".");
+		if (try found)
 		{
-			config = parsed;
+			config = found;
 		}
-		else
+		else if (@catch(found) != CONFIG_NOT_FOUND)
 		{
-			io::eprintfn(
-				"Can't parse .c3fmt configuration file: %s",
-				cli_options.config
-			);
+			io::eprintfn("Can't parse .c3fmt configuration file: %s", @catch(found));
 			return 1;
 		}
 	}
@@ -239,7 +272,8 @@ fn int main(String[] args)
 
 	foreach (path : files)
 	{
-		pool.push(&format_worker, path, config, &ctx)!!;
+		Config file_config = resolve_config_for_file(path, config);
+		pool.push(&format_worker, path, file_config, &ctx)!!;
 	}
 	pool.join();
 
