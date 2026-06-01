@@ -1233,8 +1233,7 @@ fn void C3Fmt.process_doc_comment(&self, TSNode node)
 				(int)self.config.max_blank_line_between_statements + 1
 			);
 
-			for (int j = 0; child.type() != "doc_comment_contract"
-				&& j < blank_line_amount - 1; ++j)
+			for (int j = 0; j < blank_line_amount - 1; ++j)
 			{
 				self.buf.newline();
 			}
