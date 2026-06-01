@@ -52,17 +52,17 @@ cp "$STAGING/repo/bindings/c3/tree_sitter_c3.c3l/manifest.json"      "$STAGING/c
 cp "$STAGING/repo/bindings/c3/tree_sitter_c3.c3l/tree_sitter_c3.c3i" "$STAGING/c3l/"
 
 # Fix the ../../../src relative paths for the .c3l layout
-sed -i 's|../../../src|src|g' "$STAGING/c3l/manifest.json"
-sed -i 's|../../../src|src|g' "$STAGING/c3l/tree_sitter_c3.c3i"
+perl -pi -e 's|\Q../../../src\E|src|g' "$STAGING/c3l/manifest.json"
+perl -pi -e 's|\Q../../../src\E|src|g' "$STAGING/c3l/tree_sitter_c3.c3i"
 
 # Move -fPIC to specific non-windows targets to avoid MSVC warnings
-sed -i 's|"cflags" : "-O2 -fPIC"|"cflags" : "-O2"|g' "$STAGING/c3l/manifest.json"
-sed -i '/"targets" : {/a \    "linux-x64" : { "cflags": "-fPIC" },\n    "linux-x86" : { "cflags": "-fPIC" },\n    "macos-x64" : { "cflags": "-fPIC" },\n    "macos-aarch64" : { "cflags": "-fPIC" },' "$STAGING/c3l/manifest.json"
+perl -pi -e 's|"cflags" : "-O2 -fPIC"|"cflags" : "-O2"|g' "$STAGING/c3l/manifest.json"
+perl -pi -e 's|("targets" : \{)|$1\n    "linux-x64" : { "cflags": "-fPIC" },\n    "linux-x86" : { "cflags": "-fPIC" },\n    "macos-x64" : { "cflags": "-fPIC" },\n    "macos-aarch64" : { "cflags": "-fPIC" },|' "$STAGING/c3l/manifest.json"
 
 # Ensure Windows targets are available in the manifest (NOTE: fix this upstream)
 for target in "windows-x64"; do
     if ! grep -q "$target" "$STAGING/c3l/manifest.json"; then
-        sed -i 's|"targets" : {|"targets" : {\n    "'"$target"'" : { },|g' "$STAGING/c3l/manifest.json"
+        perl -pi -e 's|("targets" : \{)|$1\n    "'"$target"'" : { },|g' "$STAGING/c3l/manifest.json"
     fi
 done
 
