@@ -708,17 +708,16 @@ fn void C3Fmt.process_composite(
 			else
 			{
 				String text = child.get_text(self.source_code);
-				self.buf.text(text);
-				if (respect_input_newlines)
+				if (respect_input_newlines && text == "}")
 				{
-					if (text == "{")
-					{
-						self.indent();
-					}
-					else if (text == "}")
-					{
-						self.dedent();
-					}
+					self.dedent();
+				}
+				
+				self.buf.text(text);
+				
+				if (respect_input_newlines && text == "{")
+				{
+					self.indent();
 				}
 			}
 		}
