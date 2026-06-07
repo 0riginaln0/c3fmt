@@ -1943,7 +1943,7 @@ fn void C3Fmt.process_node(
 		case "maybe_deref_expr":
 			self.process_sequence(node);
 		case "binary_expr":
-			usz id = self.begin_wrap_group(2);
+			usz id = self.begin_wrap_group(1);
 			self.process_composite(
 				node,
 				add_wrap_point_fn: fn (String type, String field, usz id)
